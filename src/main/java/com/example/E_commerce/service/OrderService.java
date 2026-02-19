@@ -3,6 +3,7 @@ package com.example.E_commerce.service;
 
 import com.example.E_commerce.dto.orderDto.CheckoutResponseDto;
 import com.example.E_commerce.dto.orderDto.OrderResponseDto;
+import com.example.E_commerce.model.Product;
 import com.example.E_commerce.model.User;
 import com.example.E_commerce.model.cart.Cart;
 import com.example.E_commerce.model.order.Order;
@@ -10,6 +11,7 @@ import com.example.E_commerce.model.order.OrderItem;
 import com.example.E_commerce.model.order.OrderStatus;
 import com.example.E_commerce.repo.CartRepo;
 import com.example.E_commerce.repo.OrderRepo;
+import com.example.E_commerce.repo.ProductRepo;
 import com.example.E_commerce.repo.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +37,9 @@ public class OrderService {
     @Autowired
     private CurrencyService currencyService;
 
+    @Autowired
+    private ProductRepo productRepo;
+
     public CheckoutResponseDto checkoutOrder(Long userId,  String currency) {
 
         User user = userRepo.findById(userId)
@@ -50,6 +55,23 @@ public class OrderService {
         if (cart.getCartItems().isEmpty()) {
             throw new RuntimeException("Cart is empty");
         }
+        cart.getCartItems().forEach(cartItem -> {
+
+            Product product = cartItem.getProduct();
+            long requestedQty = cartItem.getQuantity();
+            long availableQty = product.getStockQuantity();
+
+            if (availableQty < requestedQty) {
+                throw new RuntimeException(
+                        "Insufficient stock for product: " + product.getName()
+                );
+            }
+
+            // Reduce stock
+            product.setStockQuantity(availableQty - requestedQty);
+            productRepo.save(product);
+        });
+
 
         //Calculate total INR amount
         BigDecimal totalAmount = cart.getCartItems().stream()
@@ -79,13 +101,10 @@ public class OrderService {
 
         order.setOrderItemList(orderItems);
 
-
         Order savedOrder = orderRepository.save(order);
-
 
         cart.getCartItems().clear();
         cartRepository.save(cart);
-
 
         CheckoutResponseDto response = new CheckoutResponseDto();
         response.setOrderId(savedOrder.getId());

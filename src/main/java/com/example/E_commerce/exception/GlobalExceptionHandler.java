@@ -28,4 +28,5 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleApplicationException(ApplicationException ex) {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
 }

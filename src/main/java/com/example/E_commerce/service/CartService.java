@@ -35,7 +35,7 @@ public class CartService {
     @Autowired
     private UserRepo userRepo;
 
-    // add product to cart..
+    // add product to cart.....
     public ResponseEntity<?> addProductToCart(AddToCartRequestDto cartRequest) {
 
         User user = userRepo.findById(cartRequest.getUserId())
@@ -66,7 +66,6 @@ public class CartService {
         cartItemRepo.save(cartItem);
 
         return new ResponseEntity<>("Product added to cart successfully", HttpStatus.OK);
-
     }
 //  .............................................................................
     // for viewing cart..
@@ -120,23 +119,28 @@ public class CartService {
     }
     //...................................................................................
     // removing cart item from cart....
-    public ResponseEntity<?> removeCartItemById(Long userId) {
+    public ResponseEntity<?> removeCartItemById(Long userId, Long cartItemId) {
 
         User user = userRepo.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id " + userId));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found with id " + userId));
 
         Cart cart = cartRepo.findByUser(user)
-                .orElseThrow(() -> new ResourceNotFoundException("Cart not found for user id " + userId));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Cart not found for user id " + userId));
 
-        CartItem item = cartItemRepo.findById(cart.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Cart item not found with id " + cart.getId()));
+        CartItem item = cartItemRepo.findById(cartItemId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Cart item not found with id " + cartItemId));
 
+        // Security check
         if (!item.getCart().getId().equals(cart.getId())) {
             throw new IllegalArgumentException("Cart item does not belong to this user");
         }
 
-        cart.getCartItems().remove(item);
-        cartRepo.save(cart);
+        cartItemRepo.delete(item);
+
         return ResponseEntity.ok("Cart item removed successfully");
     }
+
 }

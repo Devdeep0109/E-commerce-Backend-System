@@ -23,8 +23,7 @@ public class Category {
     private String description;
 
     @OneToMany(
-            mappedBy = "category",
-            cascade = CascadeType.ALL
+            mappedBy = "category"
     )
     @JsonIgnore
     private List<Product> products;
